@@ -45,7 +45,7 @@ library(offSiteTrees)
 
 First thing is to download some species data for a certain region.  In this example, let's download silviculture information for Douglas-fir planted in Skeena Region:
 ```{r eval=FALSE}
-rsk<-extractData(regionCode="rsk",speciesList=c("FD","FDI","FDC"))
+rsk<-extractData(regionCode="rsk", speciesList=c("FD","FDI","FDC"))
 ```
 
 This will take a few minutes.  Note that I provided several species codes to the function.
