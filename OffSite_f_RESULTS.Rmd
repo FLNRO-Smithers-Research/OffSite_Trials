@@ -38,7 +38,7 @@ remotes::install_github("FLNRO-Smithers-Research/Offsite_Species_Trials")
 
 Load the library into your workspace:
 ```{r}
-library(Offsite_Species_Trials)
+library(offSiteTrees)
 ```
 
 
@@ -46,7 +46,7 @@ library(Offsite_Species_Trials)
 
 First thing is to download some species data for a certain region.  In this example, let's download silviculture information for Douglas-fir planted in Skeena Region:
 ```{r eval=FALSE}
-rsk<-extractData(regionCode="rsk",sppList=c("FD","FDI","FDC"))
+rsk<-extractData(regionCode="rsk", speciesList = c("FD","FDI","FDC"))
 ```
 
 This will take a few minutes.  Note that I provided several species codes to the function.
