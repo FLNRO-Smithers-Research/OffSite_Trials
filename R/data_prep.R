@@ -42,11 +42,44 @@ spp_offsite <-
   filter(Species %in% speciesList) %>%   # filter for species of interest
   anti_join(bec_rsk, ., by=c("MAP_LABEL" = "BGC"))
 
+FD_offsite <-
+  ref %>%
+  select(BGC, SS_NoSpace, Species) %>% 
+  mutate(Species=toupper(Species)) %>% # convert spp to uppercase to match RESULTS
+  filter(Species == "Fd") %>%   # filter for species of interest
+  anti_join(bec_rsk, ., by=c("MAP_LABEL" = "BGC"))
+
+LW_offsite <-
+  ref %>%
+  select(BGC, SS_NoSpace, Species) %>% 
+  mutate(Species=toupper(Species)) %>% # convert spp to uppercase to match RESULTS
+  filter(Species == "Lw") %>%   # filter for species of interest
+  anti_join(bec_rsk, ., by=c("MAP_LABEL" = "BGC"))
+
+CW_offsite <-
+  ref %>%
+  select(BGC, SS_NoSpace, Species) %>% 
+  mutate(Species=toupper(Species)) %>% # convert spp to uppercase to match RESULTS
+  filter(Species == "Cw") %>%   # filter for species of interest
+  anti_join(bec_rsk, ., by=c("MAP_LABEL" = "BGC"))
+
+PY_offsite <-
+  ref %>%
+  select(BGC, SS_NoSpace, Species) %>% 
+  mutate(Species=toupper(Species)) %>% # convert spp to uppercase to match RESULTS
+  filter(Species == "Py") %>%   # filter for species of interest
+  anti_join(bec_rsk, ., by=c("MAP_LABEL" = "BGC"))
+
+
+
 ## stats summary
 spp_sum <- as_tibble(spp_offsite) %>% 
-  group_by(BGC_LABEL) %>% 
+  group_by(BGC_LABEL, ) %>% 
   summarize(Num.openings=n(), # Summarize number of openings planted with Fd
-            Area.planted=sum(AREA_SQM, na.rm = TRUE), # summarize area planted with Fd
+            # Area.planted=sum(AREA_SQM, na.rm = TRUE), # summarize area planted with Fd
             # Total.WS.trees=sum(WELL_SPACED_HA,na.rm=T)
             )  # summarize total Fd well spaced
   # filter(BGC!="NANA") # remove NA BGC units
+
+## using st_area to get area by species
+
