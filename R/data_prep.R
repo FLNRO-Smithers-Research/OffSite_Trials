@@ -56,7 +56,7 @@ write_sf(silvi_bec, "../silvi_bec_JOINED.shp")
 speciesList = c("FD", "LW", "CW", "PY", "FDI", "FDC") 
 
 silvi_bec <- read_sf("../silvi_bec_JOINED.shp") %>% 
-rename("BGC" = "BGC_ZN_") 
+rename("BGC" = "MAP_LAB") 
 
 silvi_bec <- silvi_bec %>% 
   filter(!is.na(BGC) & !is.na(Species)) %>% 
@@ -64,20 +64,21 @@ silvi_bec <- silvi_bec %>%
                              Species == "FDC" ~ "FD",
                              Species == "CW" ~ "CW",
                              Species == "LW" ~ "LW"),
-         BGC = case_when(BGC == "CWH" ~ "CWH",
-                         BGC == "SBS" ~ "SBS",
-                         BGC == "ESSF" ~ "ESS",
-                         BGC == "ICH" ~ "ICH"))
+         # BGC = case_when(BGC == "CWH" ~ "CWH",
+         #                 BGC == "SBS" ~ "SBS",
+         #                 BGC == "ESSF" ~ "ESS",
+         #                 BGC == "ICH" ~ "ICH")
+         )
 
 ref <- read_csv("data/ReferenceGuide2019_Onsite.csv") %>% 
   mutate(Species=toupper(Species)) %>% # convert spp to uppercase to match RESULTS
   filter(Species %in% speciesList) 
 
 ## reformat BGC code according to silvi_bec format
-ref$BGC <- substr(ref$BGC, 1, 3)
+# ref$BGC <- substr(ref$BGC, 1, 3)
 
-ref <- ref %>% 
-  filter(BGC == "CWH" | BGC == "SBS" | BGC == "ESS" | BGC == "ICH")
+# ref <- ref %>% 
+#   filter(BGC == "CWH" | BGC == "SBS" | BGC == "ESS" | BGC == "ICH")
 
 offsite_species <- silvi_bec %>% 
   anti_join(., ref, by=c("BGC", "Species")) 
