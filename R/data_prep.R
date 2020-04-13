@@ -74,12 +74,7 @@ ref <- read_csv("data/ReferenceGuide2019_Onsite.csv") %>%
   mutate(Species=toupper(Species)) %>% # convert spp to uppercase to match RESULTS
   filter(Species %in% speciesList) 
 
-## reformat BGC code according to silvi_bec format
-# ref$BGC <- substr(ref$BGC, 1, 3)
-
-# ref <- ref %>% 
-#   filter(BGC == "CWH" | BGC == "SBS" | BGC == "ESS" | BGC == "ICH")
-
+## anti join for offsite species, first by BGC then Species
 offsite_species <- silvi_bec %>% 
   anti_join(., ref, by=c("BGC", "Species")) 
 

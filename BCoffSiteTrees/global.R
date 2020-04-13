@@ -1,0 +1,19 @@
+library(shiny)
+library(leaflet)
+library(sf)
+library(RColorBrewer)
+
+
+offsite_species <- st_read("../data/offsite_species.shp")
+offsite_species <- st_centroid(offsite_species) 
+offsite_species <- st_transform(offsite_species, 4326)
+
+bec_rsk <- st_read("../data/bec_rsk.shp")
+bec_rsk <- st_transform(bec_rsk, 4326)
+
+
+
+## creating a palette function to fill in map polygons (repeating section 3 material)
+popn_bins <- unique(bec_rsk$ZONE)
+pal <- colorFactor(brewer.pal(10, "Paired"), # using Viridis palette
+                domain = bec_rsk$zone)
