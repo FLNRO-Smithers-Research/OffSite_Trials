@@ -129,6 +129,10 @@ offsite_species <- silvi_bec %>%
 
 write_sf(offsite_species, "data/offsite_species.shp")
 
+## join with PLANTING #########################################################################
+offsite_species <- read_sf("data/offsite_species.shp")
+
+offsite_plant <- st_join(offsite_species, plant_silv)
 
 ## stats summary ##############################################################################
 ## using st_area to get area by species, but before that, filter for unique
