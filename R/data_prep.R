@@ -1,5 +1,4 @@
 library(sf)
-# library(bcmaps)
 library(readr)
 library(dplyr)
 library(rmapshaper)
@@ -21,8 +20,6 @@ bec_rsk <- ms_simplify(bec_rsk_lg)
 
 ## RESULTS layer processing ################################################################
 ## read in 
-bec_rsk <- read_sf("../bec_rsk.shp")
-
 silvi <- read_sf("../RESULTS/RSLT_FOREST_COVER_SILV_SVW/RSLT_FCSLV_polygon.shp")
 
 silvi_rsk <- st_intersection(RSK, silvi)
@@ -31,14 +28,18 @@ silvi_rsk <- st_intersection(RSK, silvi)
 write_sf(silvi_rsk , "../RESULTS_rsk.shp", driver = "ESRI Shapefile")
 
 
-## READ IN PROCESSED RESULTS ################################################################
 
+
+## READ IN PROCESSED RESULTS ################################################################
+bec_rsk <- read_sf("data/bec_rsk.shp")
 silvi_rsk_full <- read_sf("../RESULTS_rsk.shp")
 speciesList = c("FD", "LW", "CW", "PY", "FDI", "FDC") 
 
+
+
 ## clip species
 silvi_rsk <- silvi_rsk_full %>% 
-  select(BGC_ZN_CD, matches("SPP([0-9]+)_CD")) %>% 
+  select(BGC_ZN_CD, matches("SPP([0-9]+)_CD"), ) %>% 
   gather(-BGC_ZN_CD, -geometry, key = "species_col", value = "Species") %>% 
   filter(Species %in% speciesList)
 beepr::beep()
@@ -52,23 +53,71 @@ silvi_bec <- st_intersection(st_buffer(silvi_rsk, 0), st_buffer(bec_rsk, 0))
 beepr::beep()
 
 write_sf(silvi_bec, "../silvi_bec_JOINED.shp")
-## joining with reference layer ################################################
+
+## PLANT layer processing ###################################################################
+planting <- read_sf("../PLANTING_SVW.shp") %>% 
+  filter(SILV_TREE_ %in% speciesList) %>% 
+  dplyr::select(ACTIVITY_T,
+                OPENING_ID,
+                MAP_LABEL,
+                SILV_BASE_,
+                SILV_TECHN,
+                SILV_METHO,
+                ATU_COMPLE,
+                ACTUAL_TRE,
+                SILV_TREE_,
+                NUMBER_PLA,
+                PLANTED_NO,
+                SEEDLOT_NU)   
+
+beepr::beep()
+beepr::beep()
+
+silv <- read_sf("../SILV_SVW.shp") %>%
+  filter(S_SPECIES_ %in% speciesList | S_SPECIE_4 %in% speciesList | 
+           S_SPECIE_8 %in% speciesList| S_SPECIE10 %in% speciesList |
+           S_SPECIE12 %in% speciesList) %>% 
+  dplyr::select(FOREST_COV,
+                STOCKING_S,
+                OPENING_ID,
+                SILV_POL_1,
+                SILV_POL_2,
+                REFERENCE_,
+                BGC_ZONE_C,
+                BGC_SUBZON,
+                BGC_VARIAN,
+                BGC_PHASE,
+                BEC_SITE_S,
+                S_TOTAL_ST,
+                S_TOTAL_WE,
+                S_WELL_SPA,
+                S_FREE_GRO,
+                S_SPECIES_:S_SPECIE13,
+                S_SILV_LAB)
+
+beepr::beep()
+beepr::beep()
+
+write_sf(silv, "SILV_PROCESSED.shp")
+write_sf(planting, "PLANT_PROCESSED.shp")
+
+plant_silv <- st_intersection(st_buffer(planting, 0), st_buffer(silv, 0))
+
+write_sf(st_buffer(plant_silv, 0), "data/SILV_PLANT_JOIN.shp")
+
+## joining with reference layer ##############################################################
 speciesList = c("FD", "LW", "CW", "PY", "FDI", "FDC") 
 
 silvi_bec <- read_sf("../silvi_bec_JOINED.shp") %>% 
-rename("BGC" = "MAP_LAB") 
+  rename("BGC" = "MAP_LAB") 
 
 silvi_bec <- silvi_bec %>% 
   filter(!is.na(BGC) & !is.na(Species)) %>% 
   mutate(Species = case_when(Species == "FDI"  ~ "FD",
                              Species == "FDC" ~ "FD",
                              Species == "CW" ~ "CW",
-                             Species == "LW" ~ "LW"),
-         # BGC = case_when(BGC == "CWH" ~ "CWH",
-         #                 BGC == "SBS" ~ "SBS",
-         #                 BGC == "ESSF" ~ "ESS",
-         #                 BGC == "ICH" ~ "ICH")
-         )
+                             Species == "LW" ~ "LW")
+  )
 
 ref <- read_csv("data/ReferenceGuide2019_Onsite.csv") %>% 
   mutate(Species=toupper(Species)) %>% # convert spp to uppercase to match RESULTS
@@ -81,7 +130,7 @@ offsite_species <- silvi_bec %>%
 write_sf(offsite_species, "data/offsite_species.shp")
 
 
-## stats summary ##################################################################
+## stats summary ##############################################################################
 ## using st_area to get area by species, but before that, filter for unique
 
 offsite_species <- read_sf("data/offsite_species.shp")
