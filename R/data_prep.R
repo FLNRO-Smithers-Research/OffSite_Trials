@@ -98,41 +98,62 @@ silv <- read_sf("../SILV_SVW.shp") %>%
 beepr::beep()
 beepr::beep()
 
-write_sf(silv, "SILV_PROCESSED.shp")
-write_sf(planting, "PLANT_PROCESSED.shp")
+write_sf(silv, "../SILV_PROCESSED.shp")
+write_sf(planting, "../PLANT_PROCESSED.shp")
 
-plant_silv <- st_intersection(st_buffer(planting, 0), st_buffer(silv, 0))
+plant_silv <- st_join(planting, silv)
 
-write_sf(st_buffer(plant_silv, 0), "data/SILV_PLANT_JOIN.shp")
+plant_silv$OPENING_ID.y <- NULL
+names(plant_silv)[2] <- "OPENING_ID"
 
-## joining with reference layer ##############################################################
+plant_silv <- plant_silv %>% 
+  gather(-ACTIVITY_T, -OPENING_ID, -MAP_LABEL, -SILV_BASE_, -SILV_TECHN, -SILV_METHO, -ATU_COMPLE, -ACTUAL_TRE,
+         -SILV_TREE_, -NUMBER_PLA, -PLANTED_NO, -SEEDLOT_NU, -FOREST_COV, -STOCKING_S, -SILV_POL_1, -SILV_POL_2,
+         -REFERENCE_,-BGC_ZONE_C, -BGC_SUBZON, -BGC_VARIAN, -BGC_PHASE, -BEC_SITE_S, -S_TOTAL_ST, -S_TOTAL_WE, 
+         -S_WELL_SPA, -S_FREE_GRO, -S_SILV_LAB, -geometry, key = "species_col", value = "Species") %>% 
+  filter(Species %in% speciesList)
+beepr::beep()
+
+
+write_sf(st_buffer(plant_silv, 0), "../SILV_PLANT_JOIN.shp", delete_layer = TRUE)
+
+## joining with reference and planting layer #################################################
 speciesList = c("FD", "LW", "CW", "PY", "FDI", "FDC") 
 
 silvi_bec <- read_sf("../silvi_bec_JOINED.shp") %>% 
   rename("BGC" = "MAP_LAB") 
 
-silvi_bec <- silvi_bec %>% 
-  filter(!is.na(BGC) & !is.na(Species)) %>% 
-  mutate(Species = case_when(Species == "FDI"  ~ "FD",
-                             Species == "FDC" ~ "FD",
-                             Species == "CW" ~ "CW",
-                             Species == "LW" ~ "LW")
+## planting layer
+plant_silv <- read_sf("../SILV_PLANT_JOIN.shp")
+
+silvi_plant_bec <- st_join(silvi_bec, plant_silv)
+
+silvi_plant_bec <- silvi_plant_bec %>% 
+  filter(!is.na(BGC) & !is.na(Species.x)) %>% 
+  mutate(Species.x = case_when(Species.x == "FDI"  ~ "FD",
+                               Species.x == "FDC" ~ "FD",
+                               Species.x == "CW" ~ "CW",
+                               Species.x == "LW" ~ "LW"),
+         Species.y = case_when(Species.x == "FDI"  ~ "FD",
+                               Species.x == "CW" ~ "CW",
+                               Species.x == "LW" ~ "LW")
   )
 
 ref <- read_csv("data/ReferenceGuide2019_Onsite.csv") %>% 
   mutate(Species=toupper(Species)) %>% # convert spp to uppercase to match RESULTS
   filter(Species %in% speciesList) 
 
+
+
 ## anti join for offsite species, first by BGC then Species
-offsite_species <- silvi_bec %>% 
-  anti_join(., ref, by=c("BGC", "Species")) 
+offsite_species <- silvi_plant_bec %>% 
+  anti_join(., ref, by=c("BGC", "Species.x" = "Species")) 
+
+offsite_species <- offsite_species %>% 
+  rename("Species" = "Species.x")
 
 write_sf(offsite_species, "data/offsite_species.shp")
 
-## join with PLANTING #########################################################################
-offsite_species <- read_sf("data/offsite_species.shp")
-
-offsite_plant <- st_join(offsite_species, plant_silv)
 
 ## stats summary ##############################################################################
 ## using st_area to get area by species, but before that, filter for unique
@@ -146,5 +167,4 @@ offsite_sum <- as_tibble(offsite_species) %>%
   select(-geometry) %>% 
   group_by(Species) %>% 
   dplyr::summarise(area = sum(area))
-
 
