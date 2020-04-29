@@ -150,6 +150,7 @@ offsite_species <- offsite_species %>%
 
 ## final touch for shiny
 offsite_species$AGE <- as.numeric(format(Sys.Date(), '%Y')) - as.numeric(substr(offsite_species$ATU_COM, 1, 4))
+offsite_species$FEAT_AR <- round(offsite_species$FEAT_AR / 10000, 2)
 write_sf(offsite_species, "data/offsite_species.shp")
 
 
