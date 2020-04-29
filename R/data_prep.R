@@ -39,7 +39,7 @@ speciesList = c("FD", "LW", "CW", "PY", "FDI", "FDC")
 
 ## clip species
 silvi_rsk <- silvi_rsk_full %>% 
-  select(BGC_ZN_CD, matches("SPP([0-9]+)_CD"), ) %>% 
+  select(BGC_ZN_CD, matches("SPP([0-9]+)_CD")) %>% 
   gather(-BGC_ZN_CD, -geometry, key = "species_col", value = "Species") %>% 
   filter(Species %in% speciesList)
 beepr::beep()
@@ -63,10 +63,10 @@ planting <- read_sf("../PLANTING_SVW.shp") %>%
                 SILV_BASE_,
                 SILV_TECHN,
                 SILV_METHO,
-                ATU_COMPLE,
+                ATU_COMPLE, # use to calculate age
                 ACTUAL_TRE,
                 SILV_TREE_,
-                NUMBER_PLA,
+                NUMBER_PLA, # number planted
                 PLANTED_NO,
                 SEEDLOT_NU)   
 
@@ -82,14 +82,10 @@ silv <- read_sf("../SILV_SVW.shp") %>%
                 OPENING_ID,
                 SILV_POL_1,
                 SILV_POL_2,
-                REFERENCE_,
-                BGC_ZONE_C,
-                BGC_SUBZON,
-                BGC_VARIAN,
-                BGC_PHASE,
+                REFERENCE_, # reference year 
                 BEC_SITE_S,
                 S_TOTAL_ST,
-                S_TOTAL_WE,
+                S_TOTAL_WE, 
                 S_WELL_SPA,
                 S_FREE_GRO,
                 S_SPECIES_:S_SPECIE13,
@@ -109,8 +105,8 @@ names(plant_silv)[2] <- "OPENING_ID"
 plant_silv <- plant_silv %>% 
   gather(-ACTIVITY_T, -OPENING_ID, -MAP_LABEL, -SILV_BASE_, -SILV_TECHN, -SILV_METHO, -ATU_COMPLE, -ACTUAL_TRE,
          -SILV_TREE_, -NUMBER_PLA, -PLANTED_NO, -SEEDLOT_NU, -FOREST_COV, -STOCKING_S, -SILV_POL_1, -SILV_POL_2,
-         -REFERENCE_,-BGC_ZONE_C, -BGC_SUBZON, -BGC_VARIAN, -BGC_PHASE, -BEC_SITE_S, -S_TOTAL_ST, -S_TOTAL_WE, 
-         -S_WELL_SPA, -S_FREE_GRO, -S_SILV_LAB, -geometry, key = "species_col", value = "Species") %>% 
+         -REFERENCE_, -BEC_SITE_S, -S_TOTAL_ST, -S_TOTAL_WE, -S_WELL_SPA, -S_FREE_GRO, -S_SILV_LAB, -geometry, 
+         key = "species_col", value = "Species") %>% 
   filter(Species %in% speciesList)
 beepr::beep()
 
@@ -150,8 +146,10 @@ offsite_species <- silvi_plant_bec %>%
   anti_join(., ref, by=c("BGC", "Species.x" = "Species")) 
 
 offsite_species <- offsite_species %>% 
-  rename("Species" = "Species.x")
+  rename("Species" = "Species.x") 
 
+## final touch for shiny
+offsite_species$AGE <- as.numeric(format(Sys.Date(), '%Y')) - as.numeric(substr(offsite_species$ATU_COM, 1, 4))
 write_sf(offsite_species, "data/offsite_species.shp")
 
 

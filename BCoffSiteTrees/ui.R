@@ -13,8 +13,10 @@ ui <- fluidPage(
   titlePanel("British Columbia Offsite Species"),
   
   fluidRow(
-    column(8, offset = 1, br(),
-           leafletOutput("offsite_map", height = "500px")
+    column(9, offset = 1, br(),
+           leafletOutput("offsite_map", height = "800px")
+           ),
+    column(3, br(),
            )
     )
   
