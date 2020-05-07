@@ -159,7 +159,7 @@ write_sf(offsite_species, "data/offsite_species.shp")
 
 offsite_species <- read_sf("data/offsite_species.shp")
 
-offsite_species$area <- as.numeric(st_area(offsite_species))
+offsite_species$area <- round(as.numeric(st_area(offsite_species)) / 10000, 2)
 
 ## area sum, unit m^2
 offsite_sum <- as_tibble(offsite_species) %>% 

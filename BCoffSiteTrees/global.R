@@ -6,7 +6,7 @@ library(dplyr)
 
 
 offsite_species <- st_read("../data/offsite_species.shp") %>% 
-  select(OPENING, ACTIVIT, Species, SEEDLOT, NUMBER_, AGE, REFEREN, BGC, FEAT_AR) 
+  select(OPENING, ACTIVIT, Species, SEEDLOT, NUMBER_, AGE, REFEREN, BGC, area) 
 
 offsite_species <- st_centroid(offsite_species) 
 offsite_species <- st_transform(offsite_species, 4326)
