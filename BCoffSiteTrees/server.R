@@ -12,6 +12,7 @@ library(shiny)
 # Define server logic required to draw a histogram
 server <- function(input, output) {
    
+  ## MAP TAB ##############################################################
   output$offsite_map <- renderLeaflet({
     leaflet() %>%
       addProviderTiles("CartoDB.Positron") %>%
@@ -87,5 +88,38 @@ server <- function(input, output) {
                 title = "BGC Zones",
                 group = "BGC Zones") 
   })
+  
+  
+  ## NEW RECORD TAB #######################################
+  ## tab 1 creating a new card and save
+  record_data <- reactive({
+    dt <- sapply(fields, function(x) input[[x]]) # tabulates and saves user inputs
+    dt
+  })
+  
+  ## check box in datatable
+  shinyInput <- function(FUN, len, id, ...) {
+    inputs <- character(len)
+    for (i in seq_len(len)) {
+      inputs[i] <- as.character(FUN(paste0(id, i), label = NULL, ...))
+    }
+    inputs
+  }
+  
+  ## obtaining checkbox value
+  shinyValue = function(id, len) { 
+    unlist(lapply(seq_len(len), function(i) { 
+      value = input[[paste0(id, i)]] 
+      if (is.null(value)) FALSE else value 
+    })) 
+  } 
+  
+  
+  ## form ####
+  observeEvent(
+    input$submit_form, {
+      save_record(record_data())
+      reset("form")
+    })
   
 }
