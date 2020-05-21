@@ -11,83 +11,126 @@ library(shiny)
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-   
+  ## REACTIVE DATA ######################################
+  ## background polygon BGC layer
+   bgcData <- reactive({
+    bgc <- input$bgc
+    bec_rsk %>% 
+    filter(ZONE %in% bgc)
+  })
+  
+  ## point layer showing offsite species
+  speciesData <- reactive({
+    species <- input$species
+    year <- as.numeric(input$year)
+    
+  
+    
+    ## include NA assessment dates
+    if (isTRUE(input$year_NA)) {
+      speciesData <- offsite_species %>%
+        filter(
+          Species %in% species &
+            (is.na(REFEREN) |
+               (REFEREN >= input$year[1] &
+                  REFEREN <= input$year[2]))
+        )
+    ## don't include NA assessment dates
+    } else {
+      ## slider input
+      speciesData <- offsite_species %>%
+        filter(
+                Species %in% species &
+                REFEREN >= input$year[1] &
+                REFEREN <= input$year[2]
+                )
+    }
+    
+    speciesData
+  })
+  
+  
+  
+  
   ## MAP TAB ##############################################################
   output$offsite_map <- renderLeaflet({
     leaflet() %>%
       addProviderTiles("CartoDB.Positron") %>%
       addProviderTiles("Esri.WorldImagery", group = "Satellite") %>%
       addLayersControl(baseGroups = c("Default", "Satellite"), 
-                       options = layersControlOptions(collapsed = FALSE),
-                       overlayGroups = c("CW", "FD", "LW", "BGC Zones")) %>% 
-    addPolygons(data = bec_rsk, fillColor = ~pal(ZONE), 
-                color = "transparent", 
-                fillOpacity = .7,
-                group = "BGC Zones") %>% 
-      addCircles(data = offsite_species[offsite_species$Species == "CW" ,], 
-                 group = "CW",
-                 # radius = ~FEAT_AR/1000000,
-                 radius = 500,
-                 fillColor = "yellow",
-                 # fillColor = "#1b9e77",
-                 fillOpacity = .2, 
-                 color = "",
-                 weight = 1.5,
-                 popup = paste0("<b>Opening ID: </b>", offsite_species$OPENING, "<br>", 
-                                "<b>Activity Treatment Unit: </b>", offsite_species$ACTIVIT, "<br>", 
-                                "<bSpecies: </b>", offsite_species$Species, "<br>",
-                                "<b>Seedlot: </b>", offsite_species$SEEDLOT, "<br>", 
-                                "<b>Number Planted: </b>", offsite_species$NUMBER_, "<br>", 
-                                "<b>Age: </b>", offsite_species$AGE, "<br>", 
-                                "<b>Area Planted: </b>", offsite_species$area, "<br>", 
-                                "<b>Last Assessment Date: </b>", offsite_species$REFEREN, "<br>", 
-                                "<b>BGC: </b>", offsite_species$BGC, "<br>",
-                                "")) %>% 
-      addCircles(data = offsite_species[offsite_species$Species == "FD" ,], 
-                 group = "FD",
-                 # radius = ~FEAT_AR/1000000,
-                 fillColor = "#e41a1c",
-                 radius = 500,
-                 # fillColor = "#7570b3",
-                 fillOpacity = .2, 
-                 color = "",
-                 weight = 1.5,
-                 popup = paste0("<b>Opening ID: </b>", offsite_species$OPENING, "<br>", 
-                                "<b>Activity Treatment Unit: </b>", offsite_species$ACTIVIT, "<br>", 
-                                "<bSpecies: </b>", offsite_species$Species, "<br>",
-                                "<b>Seedlot: </b>", offsite_species$SEEDLOT, "<br>", 
-                                "<b>Number Planted: </b>", offsite_species$NUMBER_, "<br>", 
-                                "<b>Age: </b>", offsite_species$AGE, "<br>", 
-                                "<b>Area Planted: </b>", offsite_species$area, "<br>", 
-                                "<b>Last Assessment Date: </b>", offsite_species$REFEREN, "<br>", 
-                                "<b>BGC: </b>", offsite_species$BGC, "<br>",
-                                "")) %>% 
-      addCircles(data = offsite_species[offsite_species$Species == "LW" ,], 
-                 group = "LW",
-                 # radius = ~FEAT_AR/1000000,
-                 fillColor = "#377eb8",
-                 radius = 500,
-                 # fillColor = "#d95f02",
-                 fillOpacity = .2, 
-                 color = "",
-                 weight = 1.5,
-                 popup = paste0("<b>Opening ID: </b>", offsite_species$OPENING, "<br>", 
-                                "<b>Activity Treatment Unit: </b>", offsite_species$ACTIVIT, "<br>", 
-                                "<bSpecies: </b>", offsite_species$Species, "<br>",
-                                "<b>Seedlot: </b>", offsite_species$SEEDLOT, "<br>", 
-                                "<b>Number Planted: </b>", offsite_species$NUMBER_, "<br>", 
-                                "<b>Age: </b>", offsite_species$AGE, "<br>", 
-                                "<b>Area Planted: </b>", offsite_species$area, " (ha)<br>", 
-                                "<b>Last Assessment Date: </b>", offsite_species$REFEREN, "<br>", 
-                                "<b>BGC: </b>", offsite_species$BGC, "<br>",
-                                "")) %>%
+                       options = layersControlOptions(collapsed = FALSE)) %>% 
+      setView(lng = -128, lat = 56, zoom = 5.5) %>% 
       addLegend(pal = pal, 
                 bec_rsk$ZONE, 
                 position = "bottomleft", 
                 opacity = 0.5,
                 title = "BGC Zones",
                 group = "BGC Zones") 
+  }) 
+
+  observe({
+    
+    ## attempt to speed up processing time
+    # isolate(
+    # leafletProxy("offsite_map") %>%
+    #   clearShapes() %>%
+    #   addPolygons(data = bgcData(), fillColor = ~pal(ZONE),
+    #               color = "transparent",
+    #               fillOpacity = .6)
+    # 
+    # )
+    
+    leafletProxy("offsite_map") %>%
+      clearShapes() %>% 
+      addPolygons(data = bgcData(), fillColor = ~pal(ZONE),
+                                    color = "transparent",
+                                    fillOpacity = .6) %>% 
+      addCircles(data = speciesData(),
+                 # radius = ~area*100,
+                 radius = 500,
+                 fillColor = ~species_pal(Species),
+                 fillOpacity = 1,
+                 color = "",
+                 weight = .2,
+                 popup = paste0("<b>Opening ID: </b>", speciesData()$OPENING, "<br>",
+                                "<b>Activity Treatment Unit: </b>", speciesData()$ACTIVIT, "<br>",
+                                "<b>Species: </b>", speciesData()$Species, "<br>",
+                                "<b>Seedlot: </b>", speciesData()$SEEDLOT, "<br>",
+                                "<b>Number Planted: </b>", speciesData()$NUMBER_, "<br>",
+                                "<b>Age: </b>", speciesData()$AGE, "<br>",
+                                "<b>Area Planted: </b>", speciesData()$area, "<br>",
+                                "<b>Last Assessment Date: </b>", speciesData()$REFEREN, "<br>",
+                                "<b>BGC: </b>", speciesData()$BGC, "<br>",
+                                ""))
   })
+  
+  
+  ## part of speed-up attempt
+  # observeEvent(input$bgc, {
+  #   leafletProxy("offsite_map") %>%
+  #       clearShapes() %>%
+  #       addPolygons(data = bgcData(), fillColor = ~pal(ZONE),
+  #                   color = "transparent",
+  #                   fillOpacity = .6) %>% 
+  #     addCircles(data = speciesData(),
+  #                # radius = ~area*100,
+  #                radius = 500,
+  #                fillColor = ~species_pal(Species),
+  #                fillOpacity = 1,
+  #                color = "",
+  #                weight = .2,
+  #                popup = paste0("<b>Opening ID: </b>", speciesData()$OPENING, "<br>",
+  #                               "<b>Activity Treatment Unit: </b>", speciesData()$ACTIVIT, "<br>",
+  #                               "<b>Species: </b>", speciesData()$Species, "<br>",
+  #                               "<b>Seedlot: </b>", speciesData()$SEEDLOT, "<br>",
+  #                               "<b>Number Planted: </b>", speciesData()$NUMBER_, "<br>",
+  #                               "<b>Age: </b>", speciesData()$AGE, "<br>",
+  #                               "<b>Area Planted: </b>", speciesData()$area, "<br>",
+  #                               "<b>Last Assessment Date: </b>", speciesData()$REFEREN, "<br>",
+  #                               "<b>BGC: </b>", speciesData()$BGC, "<br>",
+  #                               ""))
+  # 
+  # })
   
   
   ## NEW RECORD TAB #######################################
