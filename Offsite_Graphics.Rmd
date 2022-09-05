@@ -1,0 +1,65 @@
+---
+title: "Off-site Trial Graphics"
+author: "Will MacKenzie"
+date: "2022-09-03"
+output: html_document
+---
+Distribution of offsite species trials by BGC and climate space
+
+Plot on map
+Count by BGC
+Count by time period (>30, 20-30, 10-19, 6-10)
+Plot trials by DD5 by CMD.adjust
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(data.table)
+require(tidyverse)
+library(readr)
+require(tictoc)
+
+## the first data.frame is the template
+trials.merge <-  function(df1, df2) {
+  trial.data.cols <- colnames(df1)
+Missing <- setdiff(trial.data.cols, names(df2))
+df2 <- as.data.frame(df2)
+df2 [Missing] <- NA # Add columns, filled with 'NA's
+df2 <- df2[trial.data.cols]  
+df <- rbind(df1, df2)
+df
+}
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+```{r import tables exported from ACCESS data set}
+offsite_spp <- c("FDI", "FDC", "LW", "PY", "PW", "CW","BA", "BG", "PA", "YC", "BN", "BP", "LS", "FD")
+offsite.trials <- fread("./clean_data/Combined_Offsite_Trial_Info.csv") %>% filter(Latitude > 52)
+offsite.planting <- fread("./clean_data/Combined_Offsite_Planting_Info.csv") %>% mutate(SppVar = toupper(SppVar)) %>% filter(SppVar %in% offsite_spp)
+```
+
+```{r create Avenza data set}
+Offsite.climate <- 
+
+Offsite.bybec <- left_join(offsite.trials, offsite.planting) %>% droplevels() 
+
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
