@@ -2,6 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
- /data/
- /spatial_files/
- /RESULTS_raw/
+ */data/
+ */spatial_files/
+ */RESULTS_raw/
