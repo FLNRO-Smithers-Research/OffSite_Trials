@@ -48,9 +48,14 @@ source("./_functions/doc_theme_pem.R")
 
 ```{r import spreadsheet data and export for SiteTools}
 ###---------This creates list of Openings with species of interest
+file.name <- "./data/AMAT_MASTERDATA_ver_14_seedlots.csv"
+seedlots <- fread(file.name) %>% dplyr::select(SLnum, SLtype)
+
+
 file.name <- "./data/AMAT_MASTERDATA_ver_14.csv"
 
-data <- fread(file.name) %>% select(Site, Sp, SLnum, Rep, HT10, Comments10)%>% mutate(HT10 = replace(HT10, HT10 == "9999", 0)) %>% mutate(HT10 = replace(HT10, HT10 == ".", 0)) %>% mutate(HT10 = as.numeric(HT10)) %>% mutate_if(is.character, as.factor) %>% 
+data <- fread(file.name) %>% left_join(seedlots) %>% dplyr::select(Site, Sp, SLnum, SLtype, Rep, HT10, Comments10) %>% mutate(HT10 = replace(HT10, HT10 == "9999", 0)) %>% mutate(HT10 = replace(HT10, HT10 == ".", 0)) %>% mutate(HT10 = as.numeric(HT10)) %>% mutate(spp = ifelse(SLtype == "LC", paste0(Sp, SLtype), Sp)) %>% 
+  mutate_if(is.character, as.factor) %>% 
   mutate(spseed = paste0(Sp, SLnum), spseedrep = paste0(Sp, SLnum,Rep), seedsite = paste0(SLnum, Site))
 
 file.name <- "./data/AMAT_MASTERDATA_ver_14_Sites.csv"
@@ -76,7 +81,7 @@ sites = c("PORT","PARK", "NITI", "HOLB")
 
 data1 <- data  %>%  filter(Site %in% sites)
 
-HT_viol_10 <- ggplot(data1, aes(x= Sp, y=HT10, colour = Sp))+
+HT_viol_10 <- ggplot(data1, aes(x= spp, y=HT10, colour = Sp))+
          geom_violin(fill = "grey70", scale = "width",draw_quantiles = c(0.25, 0.5, 0.75))+
   #geom_jitter(width = 0.15)+
   coord_flip()+
